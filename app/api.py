@@ -1,7 +1,9 @@
-from flask import Flask
+from flask import Flask, request
 from flask_restplus import Api, Resource, fields
 from poloniex import Poloniex
+from flask import abort
 import requests
+import json
 
 
 app = Flask(__name__)
@@ -23,15 +25,27 @@ volume_model = api.model('API Model', {
 
 @ns.route('/taxes')
 class Taxes(Resource):
-    @api.doc(model=taxes_model)
+    @api.expect(taxes_model)
     def post(self):
         return {'Hello': 'World'}
 
 @ns.route('/volume')
 class Volume(Resource):
-    @api.doc(model=volume_model)
+    @api.expect(volume_model)
     def post(self):
-        return {'Hello': 'World'}
+        if request.method == 'POST':
+            data = json.loads(request.data)
+            key = data['key']
+            secret = data['secret']
+            amount = data['amount']
+        else:
+            abort(400, "The HTTP request type must be a POST\n")
+
+        req = requests.get('https://poloniex.com/public?command=returnCurrencies')
+    
+        for key, value in req.json().items():
+            print(key, value)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
